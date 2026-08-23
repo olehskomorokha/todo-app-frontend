@@ -1,9 +1,24 @@
-<header class="header">
-  <a href="/" class="logo">Todo App</a>
+<header class="navbar bg-body-tertiary border-bottom px-3 py-3">
+  <div class="container-fluid d-flex flex-wrap gap-3">
+    <a routerLink="/" class="navbar-brand fw-bold mb-0">Todo App</a>
 
-  <nav>
-    <a routerLink="/" href="/">Головна</a>
-    <a routerLink="/tasks" href="/tasks">Мої Завдання</a>
-    <a routerLink="/home" href="/home">Домівка</a>
-  </nav>
+    <nav class="main-nav nav flex-nowrap" aria-label="Основна навігація">
+      <a routerLink="/" class="nav-link text-nowrap">Головна</a>
+      <a routerLink="/tasks" class="nav-link text-nowrap">Мої завдання</a>
+      <a routerLink="/home" class="nav-link text-nowrap">Домівка</a>
+    </nav>
+
+    <nav class="d-flex gap-2 ms-auto" aria-label="Авторизація">
+      <a
+        routerLink="/login"
+        routerLinkActive="active"
+        class="btn btn-outline-primary"
+      >Увійти</a>
+      <a
+        routerLink="/register"
+        routerLinkActive="active"
+        class="btn btn-primary"
+      >Реєстрація</a>
+    </nav>
+  </div>
 </header>
