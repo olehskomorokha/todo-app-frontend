@@ -23,6 +23,20 @@
 
 .group-item {
   min-height: 42px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.group-item.drop-target {
+  border-color: var(--bs-primary) !important;
+  background-color: var(--bs-primary-bg-subtle) !important;
+}
+
+.task-list-item {
+  cursor: grab;
+}
+
+.task-list-item:active {
+  cursor: grabbing;
 }
 
 @media (max-width: 767.98px) {

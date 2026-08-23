@@ -22,6 +22,8 @@ export class Home implements OnInit {
   selectedListId: number | null = null;
   selectedTitle = 'Усі завдання';
   loadingTasks = false;
+  draggedList: TaskList | null = null;
+  dragOverGroupId: number | null = null;
   saving = false;
   errorMessage = '';
   successMessage = '';
@@ -47,7 +49,12 @@ export class Home implements OnInit {
       next: data => {
         this.groups = data.groups
           .sort((a, b) => b.id - a.id);
-        this.lists = data.lists.filter(list => list.userId === userId);
+        const groupedListIds = new Set(
+          this.groups.flatMap(group => group.taskLists.map(list => list.id)),
+        );
+        this.lists = data.lists.filter(
+          list => list.userId === userId && !groupedListIds.has(list.id),
+        );
         afterLoad?.();
       },
       error: () => (this.errorMessage = 'Не вдалося завантажити групи та списки завдань.'),
@@ -60,6 +67,51 @@ export class Home implements OnInit {
       return nestedLists ?? this.lists.filter(list => list.taskGroupId === groupId);
     }
     return this.lists.filter(list => list.taskGroupId === groupId);
+  }
+
+  startDragging(list: TaskList, event: DragEvent): void {
+    this.draggedList = list;
+    event.dataTransfer?.setData('text/plain', String(list.id));
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+  }
+
+  allowGroupDrop(groupId: number, event: DragEvent): void {
+    event.preventDefault();
+    this.dragOverGroupId = groupId;
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  }
+
+  leaveGroup(groupId: number): void {
+    if (this.dragOverGroupId === groupId) this.dragOverGroupId = null;
+  }
+
+  dropIntoGroup(group: TaskGroup, event: DragEvent): void {
+    event.preventDefault();
+    const list = this.draggedList;
+    this.draggedList = null;
+    this.dragOverGroupId = null;
+
+    if (!list || list.taskGroupId === group.id || this.saving) return;
+
+    this.saving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+    this.navigation.updateList(list.id, { taskGroupId: group.id }).pipe(
+      finalize(() => (this.saving = false)),
+    ).subscribe({
+      next: () => {
+        this.successMessage = `Список «${list.name}» додано до групи «${group.name}».`;
+        this.loadNavigation();
+      },
+      error: error => {
+        this.errorMessage = error.error?.message ?? 'Не вдалося перемістити список до групи.';
+      },
+    });
+  }
+
+  finishDragging(): void {
+    this.draggedList = null;
+    this.dragOverGroupId = null;
   }
 
   loadAllTasks(): void {
