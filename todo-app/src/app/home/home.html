@@ -172,7 +172,7 @@
 
     @if (selectedListId !== null || showingAllTasks) {
       <div class="table-responsive border rounded shadow-sm">
-        <table class="table table-hover align-middle mb-0">
+        <table class="task-table table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
               <th scope="col">Назва</th>
@@ -245,10 +245,12 @@
                   <td>
                     <div class="fw-semibold" [class.text-decoration-line-through]="task.isFinished">
                       {{ task.name }}
-                    </div>
-                    @if (task.description) {
-                      <small class="text-body-secondary">{{ task.description }}</small>
-                    }
+                  </div>
+                  @if (task.description) {
+                    <small class="task-description text-body-secondary" [title]="task.description">
+                      {{ task.description }}
+                    </small>
+                  }
                   </td>
                   <td>{{ task.deadline ? (task.deadline | date:'dd-MM-yyyy') : '—' }}</td>
                   <td>

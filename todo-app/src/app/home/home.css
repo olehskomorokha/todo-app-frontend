@@ -76,6 +76,25 @@
   background: rgb(0 0 0 / 45%);
 }
 
+.task-table {
+  table-layout: fixed;
+  min-width: 720px;
+}
+
+.task-table th:first-child,
+.task-table td:first-child {
+  width: 40%;
+}
+
+.task-description {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
 @media (max-width: 767.98px) {
   .home-layout {
     grid-template-columns: 1fr;
