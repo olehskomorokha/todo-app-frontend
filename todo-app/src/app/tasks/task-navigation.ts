@@ -26,11 +26,13 @@ export interface CreateTaskList {
 
 export interface TodoTask {
   id: number;
+  userId: number;
   taskListId: number | null;
   name: string;
   description: string | null;
   isFinished: boolean;
   isImportant: boolean | null;
+  completedAt: string | null;
   dateOfCreation: string;
   deadline: string | null;
   remind: string | null;
@@ -93,6 +95,10 @@ export class TaskNavigation {
 
   updateGroup(id: number, name: string) {
     return this.http.put<void>(`${this.apiUrl}/TaskGroup/${id}`, { name });
+  }
+
+  deleteGroup(id: number) {
+    return this.http.delete<void>(`${this.apiUrl}/TaskGroup/${id}`);
   }
 
   createList(data: CreateTaskList) {

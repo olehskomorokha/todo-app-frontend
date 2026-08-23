@@ -26,8 +26,8 @@
               <span class="fw-semibold text-truncate flex-grow-1">{{ group.name }}</span>
               <button class="action-button btn btn-sm btn-light" (click)="startGroupEdit(group)"
                 aria-label="Редагувати групу">✎</button>
-              <button class="btn btn-sm btn-light text-body-tertiary" disabled
-                title="Backend не має endpoint для видалення групи" aria-label="Видалення недоступне">⌫</button>
+              <button class="action-button btn btn-sm btn-light text-danger" (click)="deleteGroup(group)"
+                aria-label="Видалити групу">⌫</button>
             }
           </div>
           <div class="list-group list-group-flush">

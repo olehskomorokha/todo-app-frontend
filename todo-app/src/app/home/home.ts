@@ -16,6 +16,7 @@ export class Home implements OnInit {
   readonly groups = signal<TaskGroup[]>([]);
   readonly lists = signal<TaskList[]>([]);
   readonly tasks = signal<TodoTask[]>([]);
+  private allUserLists: TaskList[] = [];
   selectedListId: number | null = null;
   selectedTitle = 'Оберіть список завдань';
   showingAllTasks = false;
@@ -92,7 +93,7 @@ export class Home implements OnInit {
 
     this.navigation.getLists().subscribe({
       next: lists => {
-        this.lists.set(lists.filter(list => list.userId === userId));
+        this.allUserLists = lists.filter(list => list.userId === userId);
         this.removeGroupedDuplicates();
       },
       error: () => {
@@ -106,7 +107,7 @@ export class Home implements OnInit {
     const groupedListIds = new Set(
       this.groups().flatMap(group => group.taskLists.map(list => list.id)),
     );
-    this.lists.update(lists => lists.filter(list => !groupedListIds.has(list.id)));
+    this.lists.set(this.allUserLists.filter(list => !groupedListIds.has(list.id)));
   }
 
   listsForGroup(groupId: number | null): TaskList[] {
@@ -182,6 +183,26 @@ export class Home implements OnInit {
         this.refreshComponentData();
       },
       error: error => this.showMutationError(error, 'Не вдалося перейменувати групу.'),
+    });
+  }
+
+  deleteGroup(group: TaskGroup): void {
+    const listCount = group.taskLists.length;
+    const warning = listCount > 0
+      ? `Група містить списки (${listCount}). Видалити групу?`
+      : `Видалити групу «${group.name}»?`;
+    if (!confirm(warning) || this.saving) return;
+
+    this.saving = true;
+    this.clearMessages();
+    this.navigation.deleteGroup(group.id).pipe(
+      finalize(() => this.finishSaving()),
+    ).subscribe({
+      next: () => {
+        this.successMessage = `Групу «${group.name}» видалено.`;
+        this.refreshComponentData();
+      },
+      error: error => this.showMutationError(error, 'Не вдалося видалити групу.'),
     });
   }
 
