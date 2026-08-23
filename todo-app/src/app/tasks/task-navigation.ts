@@ -56,6 +56,10 @@ export class TaskNavigation {
     return this.http.get<TaskGroup[]>(`${this.apiUrl}/TaskGroup/user/${userId}`);
   }
 
+  getLists() {
+    return this.http.get<TaskList[]>(`${this.apiUrl}/TaskList`);
+  }
+
   loadForUser(userId: number) {
     return forkJoin({
       groups: this.getUserGroups(userId),
