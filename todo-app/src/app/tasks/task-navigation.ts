@@ -58,6 +58,13 @@ export interface UpdateTodoTask {
   isFinished?: boolean;
 }
 
+export interface PagedTasks {
+  items: TodoTask[];
+  page: number;
+  itemsCount: number;
+  totalCount: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TaskNavigation {
   private readonly http = inject(HttpClient);
@@ -113,13 +120,16 @@ export class TaskNavigation {
     return this.http.delete<void>(`${this.apiUrl}/TaskList/${id}`);
   }
 
-  getUserTasks(userId: number) {
-    return this.http.get<TodoTask[]>(`${this.apiUrl}/Task/user/${userId}`);
+  getUserTasks(userId: number, page = 1, itemsCount = 10) {
+    return this.http.get<PagedTasks>(`${this.apiUrl}/Task/user/${userId}`, {
+      params: { Page: page, ItemsCount: itemsCount },
+    });
   }
 
-  getUserTasksByList(userId: number, taskListId: number) {
-    return this.http.get<TodoTask[]>(
+  getUserTasksByList(userId: number, taskListId: number, page = 1, itemsCount = 10) {
+    return this.http.get<PagedTasks>(
       `${this.apiUrl}/Task/user/${userId}/task-list/${taskListId}`,
+      { params: { Page: page, ItemsCount: itemsCount } },
     );
   }
 

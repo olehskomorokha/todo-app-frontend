@@ -282,6 +282,25 @@
           </tbody>
         </table>
       </div>
+      <nav class="mt-3" aria-label="Пагінація завдань">
+        <ul class="pagination justify-content-center mb-0">
+          <li class="page-item" [class.disabled]="currentPage === 1 || loadingTasks">
+            <button class="page-link" type="button" (click)="loadPage(currentPage - 1)"
+              [disabled]="currentPage === 1 || loadingTasks">Назад</button>
+          </li>
+          @for (page of pageNumbers(); track page) {
+            <li class="page-item" [class.active]="page === currentPage"
+              [attr.aria-current]="page === currentPage ? 'page' : null">
+              <button class="page-link" type="button" (click)="loadPage(page)"
+                [disabled]="loadingTasks">{{ page }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="!hasNextPage || loadingTasks">
+            <button class="page-link" type="button" (click)="loadPage(currentPage + 1)"
+              [disabled]="!hasNextPage || loadingTasks">Далі</button>
+          </li>
+        </ul>
+      </nav>
     }
   </section>
 </main>

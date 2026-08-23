@@ -21,6 +21,11 @@ export class Home implements OnInit {
   selectedTitle = 'Оберіть список завдань';
   showingAllTasks = false;
   activeTaskFilter: 'all' | 'important' | null = null;
+  readonly pageSize = 10;
+  currentPage = 1;
+  hasNextPage = false;
+  totalPages = 0;
+  totalTasks = 0;
   loadingTasks = false;
   loadingGroups = false;
   groupErrorMessage = '';
@@ -290,7 +295,13 @@ export class Home implements OnInit {
     const userId = this.auth.getUserId();
     if (userId !== null && this.selectedListId !== null) {
       this.loadTasksRequest(
-        this.navigation.getUserTasksByList(userId, this.selectedListId),
+        this.navigation.getUserTasksByList(
+          userId,
+          this.selectedListId,
+          this.currentPage,
+          this.pageSize,
+        ),
+        this.currentPage,
       );
     }
 
@@ -360,10 +371,13 @@ export class Home implements OnInit {
     this.selectedTitle = list.name;
     this.showingAllTasks = false;
     this.activeTaskFilter = null;
-    this.loadTasksRequest(this.navigation.getUserTasksByList(userId, list.id));
+    this.loadTasksRequest(
+      this.navigation.getUserTasksByList(userId, list.id, 1, this.pageSize),
+      1,
+    );
   }
 
-  loadAllTasks(): void {
+  loadAllTasks(page = 1): void {
     const userId = this.auth.getUserId();
     if (userId === null) return;
 
@@ -371,10 +385,13 @@ export class Home implements OnInit {
     this.selectedTitle = 'Всі завдання';
     this.showingAllTasks = true;
     this.activeTaskFilter = 'all';
-    this.loadTasksRequest(this.navigation.getUserTasks(userId));
+    this.loadTasksRequest(
+      this.navigation.getUserTasks(userId, page, this.pageSize),
+      page,
+    );
   }
 
-  loadImportantTasks(): void {
+  loadImportantTasks(page = 1): void {
     const userId = this.auth.getUserId();
     if (userId === null) return;
 
@@ -383,10 +400,36 @@ export class Home implements OnInit {
     this.showingAllTasks = true;
     this.activeTaskFilter = 'important';
     this.loadTasksRequest(
-      this.navigation.getUserTasks(userId).pipe(
-        map(tasks => tasks.filter(task => task.isImportant === true)),
+      this.navigation.getUserTasks(userId, page, this.pageSize).pipe(
+        map(result => ({
+          ...result,
+          items: result.items.filter(task => task.isImportant === true),
+        })),
       ),
+      page,
     );
+  }
+
+  loadPage(page: number): void {
+    if (page < 1 || (page > this.currentPage && !this.hasNextPage)) return;
+
+    if (this.activeTaskFilter === 'all') {
+      this.loadAllTasks(page);
+    } else if (this.activeTaskFilter === 'important') {
+      this.loadImportantTasks(page);
+    } else if (this.selectedListId !== null) {
+      const userId = this.auth.getUserId();
+      if (userId !== null) {
+        this.loadTasksRequest(
+          this.navigation.getUserTasksByList(userId, this.selectedListId, page, this.pageSize),
+          page,
+        );
+      }
+    }
+  }
+
+  pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, index) => index + 1);
   }
 
   createTask(): void {
@@ -421,7 +464,10 @@ export class Home implements OnInit {
         this.newTaskImportant = false;
         this.successMessage = `Завдання «${name}» створено.`;
         if (this.selectedListId === taskListId) {
-          this.loadTasksRequest(this.navigation.getUserTasksByList(userId, taskListId));
+          this.loadTasksRequest(
+            this.navigation.getUserTasksByList(userId, taskListId, this.currentPage, this.pageSize),
+            this.currentPage,
+          );
         }
       },
       error: error => this.showMutationError(error, 'Не вдалося створити завдання.'),
@@ -504,14 +550,24 @@ export class Home implements OnInit {
     if (userId === null) return;
     if (this.activeTaskFilter === 'important') {
       this.loadTasksRequest(
-        this.navigation.getUserTasks(userId).pipe(
-          map(tasks => tasks.filter(task => task.isImportant === true)),
+        this.navigation.getUserTasks(userId, this.currentPage, this.pageSize).pipe(
+          map(result => ({
+            ...result,
+            items: result.items.filter(task => task.isImportant === true),
+          })),
         ),
+        this.currentPage,
       );
     } else if (this.showingAllTasks) {
-      this.loadTasksRequest(this.navigation.getUserTasks(userId));
+      this.loadTasksRequest(
+        this.navigation.getUserTasks(userId, this.currentPage, this.pageSize),
+        this.currentPage,
+      );
     } else if (this.selectedListId !== null) {
-      this.loadTasksRequest(this.navigation.getUserTasksByList(userId, this.selectedListId));
+      this.loadTasksRequest(
+        this.navigation.getUserTasksByList(userId, this.selectedListId, this.currentPage, this.pageSize),
+        this.currentPage,
+      );
     }
   }
 
@@ -519,15 +575,24 @@ export class Home implements OnInit {
     return value ? value.substring(0, 16) : '';
   }
 
-  private loadTasksRequest(request: ReturnType<TaskNavigation['getUserTasks']>): void {
+  private loadTasksRequest(
+    request: ReturnType<TaskNavigation['getUserTasks']>,
+    page = 1,
+  ): void {
     this.loadingTasks = true;
     this.errorMessage = '';
     request.pipe(finalize(() => {
       this.loadingTasks = false;
       this.changeDetector.detectChanges();
     })).subscribe({
-      next: tasks => {
-        this.tasks.set(tasks);
+      next: result => {
+        this.tasks.set(result.items);
+        this.currentPage = result.page || page;
+        this.totalTasks = result.totalCount;
+        this.totalPages = result.totalCount === 0
+          ? 0
+          : Math.ceil(result.totalCount / result.itemsCount);
+        this.hasNextPage = this.currentPage < this.totalPages;
       },
       error: error => {
         this.tasks.set([]);
