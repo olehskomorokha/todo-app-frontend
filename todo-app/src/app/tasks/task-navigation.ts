@@ -46,6 +46,16 @@ export interface CreateTodoTask {
   isImportant: boolean;
 }
 
+export interface UpdateTodoTask {
+  name?: string;
+  description?: string;
+  deadline?: string;
+  remind?: string;
+  taskListId?: number;
+  isImportant?: boolean;
+  isFinished?: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TaskNavigation {
   private readonly http = inject(HttpClient);
@@ -109,5 +119,9 @@ export class TaskNavigation {
 
   createTask(data: CreateTodoTask) {
     return this.http.post<void>(`${this.apiUrl}/Task`, data);
+  }
+
+  updateTask(id: number, data: UpdateTodoTask) {
+    return this.http.put<void>(`${this.apiUrl}/Task/${id}`, data);
   }
 }

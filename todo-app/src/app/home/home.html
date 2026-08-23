@@ -170,7 +170,7 @@
       </div>
     }
 
-    @if (selectedListId !== null) {
+    @if (selectedListId !== null || showingAllTasks) {
       <div class="table-responsive border rounded shadow-sm">
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
@@ -179,32 +179,99 @@
               <th scope="col">Термін</th>
               <th scope="col">Важливість</th>
               <th scope="col">Нагадування</th>
+              <th scope="col" class="text-end">Дії</th>
             </tr>
           </thead>
           <tbody>
             @for (task of tasks(); track task.id) {
-              <tr [class.table-secondary]="task.isFinished">
-                <td>
-                  <div class="fw-semibold" [class.text-decoration-line-through]="task.isFinished">
-                    {{ task.name }}
-                  </div>
-                  @if (task.description) {
-                    <small class="text-body-secondary">{{ task.description }}</small>
-                  }
-                </td>
-                <td>{{ task.deadline ? (task.deadline | date:'dd-MM-yyyy') : '—' }}</td>
-                <td>
-                  <span class="badge" [class.text-bg-warning]="task.isImportant"
-                    [class.text-bg-secondary]="!task.isImportant">
-                    {{ task.isImportant ? 'Важливо' : 'Звичайна' }}
-                  </span>
-                </td>
-                <td>{{ task.remind ? (task.remind | date:'dd-MM-yyyy') : '—' }}</td>
-              </tr>
+              @if (editingTaskId === task.id) {
+                <tr>
+                  <td colspan="5" class="p-3">
+                    <form (ngSubmit)="saveTask(task)">
+                      <div class="row g-2">
+                        <div class="col-md-6">
+                          <label class="form-label small">Назва</label>
+                          <input class="form-control form-control-sm" name="editTaskName"
+                            [(ngModel)]="editTaskName" required>
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label small">Список</label>
+                          <select class="form-select form-select-sm" name="editTaskListId"
+                            [(ngModel)]="editTaskListId">
+                            @for (list of allTaskLists(); track list.id) {
+                              <option [ngValue]="list.id">{{ list.name }}</option>
+                            }
+                          </select>
+                        </div>
+                        <div class="col-12">
+                          <label class="form-label small">Опис</label>
+                          <textarea class="form-control form-control-sm" name="editTaskDescription"
+                            [(ngModel)]="editTaskDescription" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label small">Дедлайн</label>
+                          <input type="datetime-local" class="form-control form-control-sm"
+                            name="editTaskDeadline" [(ngModel)]="editTaskDeadline">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label small">Нагадування</label>
+                          <input type="datetime-local" class="form-control form-control-sm"
+                            name="editTaskRemind" [(ngModel)]="editTaskRemind">
+                        </div>
+                        <div class="col-12 d-flex flex-wrap align-items-center gap-3">
+                          <div class="form-check">
+                            <input id="edit-important" type="checkbox" class="form-check-input"
+                              name="editTaskImportant" [(ngModel)]="editTaskImportant">
+                            <label for="edit-important" class="form-check-label">Важливе</label>
+                          </div>
+                          <div class="form-check">
+                            <input id="edit-finished" type="checkbox" class="form-check-input"
+                              name="editTaskFinished" [(ngModel)]="editTaskFinished">
+                            <label for="edit-finished" class="form-check-label">Завершене</label>
+                          </div>
+                          <div class="ms-auto d-flex gap-2">
+                            <button class="btn btn-sm btn-primary" type="submit"
+                              [disabled]="!editTaskName.trim() || saving">Зберегти</button>
+                            <button class="btn btn-sm btn-light" type="button"
+                              (click)="cancelTaskEdit()">Скасувати</button>
+                          </div>
+                        </div>
+                      </div>
+                    </form>
+                  </td>
+                </tr>
+              } @else {
+                <tr [class.table-secondary]="task.isFinished">
+                  <td>
+                    <div class="fw-semibold" [class.text-decoration-line-through]="task.isFinished">
+                      {{ task.name }}
+                    </div>
+                    @if (task.description) {
+                      <small class="text-body-secondary">{{ task.description }}</small>
+                    }
+                  </td>
+                  <td>{{ task.deadline ? (task.deadline | date:'dd-MM-yyyy') : '—' }}</td>
+                  <td>
+                    <span class="badge" [class.text-bg-warning]="task.isImportant"
+                      [class.text-bg-secondary]="!task.isImportant">
+                      {{ task.isImportant ? 'Важливо' : 'Звичайна' }}
+                    </span>
+                  </td>
+                  <td>{{ task.remind ? (task.remind | date:'dd-MM-yyyy') : '—' }}</td>
+                  <td class="text-end text-nowrap">
+                    <button class="btn btn-sm btn-outline-success me-1" type="button"
+                      (click)="toggleTaskFinished(task)">
+                      {{ task.isFinished ? 'Відновити' : 'Завершити' }}
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" type="button"
+                      (click)="startTaskEdit(task)">Редагувати</button>
+                  </td>
+                </tr>
+              }
             } @empty {
               @if (!loadingTasks) {
                 <tr>
-                  <td colspan="4" class="text-center text-body-secondary py-4">
+                  <td colspan="5" class="text-center text-body-secondary py-4">
                     У цьому списку ще немає завдань.
                   </td>
                 </tr>

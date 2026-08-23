@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { finalize, retry } from 'rxjs';
 import { Auth } from '../auth/auth';
 import { TaskGroup, TaskList, TaskNavigation, TodoTask } from '../tasks/task-navigation';
@@ -17,6 +18,7 @@ export class Home implements OnInit {
   readonly tasks = signal<TodoTask[]>([]);
   selectedListId: number | null = null;
   selectedTitle = 'Оберіть список завдань';
+  showingAllTasks = false;
   loadingTasks = false;
   loadingGroups = false;
   groupErrorMessage = '';
@@ -36,15 +38,27 @@ export class Home implements OnInit {
   newTaskDeadline = '';
   newTaskRemind = '';
   newTaskImportant = false;
+  editingTaskId: number | null = null;
+  editTaskName = '';
+  editTaskDescription = '';
+  editTaskDeadline = '';
+  editTaskRemind = '';
+  editTaskListId: number | null = null;
+  editTaskImportant = false;
+  editTaskFinished = false;
 
   constructor(
     private readonly auth: Auth,
     private readonly navigation: TaskNavigation,
     private readonly changeDetector: ChangeDetectorRef,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.loadNavigation();
+    this.route.queryParamMap.subscribe(params => {
+      if (params.get('filter') === 'all') this.loadAllTasks();
+    });
   }
 
   loadNavigation(): void {
@@ -294,7 +308,18 @@ export class Home implements OnInit {
 
     this.selectedListId = list.id;
     this.selectedTitle = list.name;
+    this.showingAllTasks = false;
     this.loadTasksRequest(this.navigation.getUserTasksByList(userId, list.id));
+  }
+
+  loadAllTasks(): void {
+    const userId = this.auth.getUserId();
+    if (userId === null) return;
+
+    this.selectedListId = null;
+    this.selectedTitle = 'Всі завдання';
+    this.showingAllTasks = true;
+    this.loadTasksRequest(this.navigation.getUserTasks(userId));
   }
 
   createTask(): void {
@@ -334,6 +359,91 @@ export class Home implements OnInit {
       },
       error: error => this.showMutationError(error, 'Не вдалося створити завдання.'),
     });
+  }
+
+  allTaskLists(): TaskList[] {
+    const byId = new Map<number, TaskList>();
+    for (const list of this.lists()) byId.set(list.id, list);
+    for (const group of this.groups()) {
+      for (const list of group.taskLists) byId.set(list.id, list);
+    }
+    return [...byId.values()];
+  }
+
+  startTaskEdit(task: TodoTask): void {
+    this.editingTaskId = task.id;
+    this.editTaskName = task.name;
+    this.editTaskDescription = task.description ?? '';
+    this.editTaskDeadline = this.toDateTimeLocal(task.deadline);
+    this.editTaskRemind = this.toDateTimeLocal(task.remind);
+    this.editTaskListId = task.taskListId;
+    this.editTaskImportant = task.isImportant ?? false;
+    this.editTaskFinished = task.isFinished;
+    this.clearMessages();
+  }
+
+  saveTask(task: TodoTask): void {
+    const name = this.editTaskName.trim();
+    if (!name || this.saving) return;
+    if (this.editTaskRemind && this.editTaskDeadline && this.editTaskRemind >= this.editTaskDeadline) {
+      this.errorMessage = 'Нагадування має бути раніше за дедлайн.';
+      return;
+    }
+
+    this.saving = true;
+    this.clearMessages();
+    this.navigation.updateTask(task.id, {
+      name,
+      description: this.editTaskDescription.trim(),
+      deadline: this.editTaskDeadline || undefined,
+      remind: this.editTaskRemind || undefined,
+      taskListId: this.editTaskListId ?? undefined,
+      isImportant: this.editTaskImportant,
+      isFinished: this.editTaskFinished,
+    }).pipe(
+      finalize(() => this.finishSaving()),
+    ).subscribe({
+      next: () => {
+        this.cancelTaskEdit();
+        this.successMessage = `Завдання «${name}» оновлено.`;
+        this.reloadSelectedTasks();
+        this.loadNavigation();
+      },
+      error: error => this.showMutationError(error, 'Не вдалося оновити завдання.'),
+    });
+  }
+
+  toggleTaskFinished(task: TodoTask): void {
+    if (this.saving) return;
+    this.saving = true;
+    this.clearMessages();
+    this.navigation.updateTask(task.id, { isFinished: !task.isFinished }).pipe(
+      finalize(() => this.finishSaving()),
+    ).subscribe({
+      next: () => {
+        this.successMessage = task.isFinished ? 'Завдання відновлено.' : 'Завдання завершено.';
+        this.reloadSelectedTasks();
+      },
+      error: error => this.showMutationError(error, 'Не вдалося змінити статус завдання.'),
+    });
+  }
+
+  cancelTaskEdit(): void {
+    this.editingTaskId = null;
+  }
+
+  private reloadSelectedTasks(): void {
+    const userId = this.auth.getUserId();
+    if (userId === null) return;
+    if (this.showingAllTasks) {
+      this.loadTasksRequest(this.navigation.getUserTasks(userId));
+    } else if (this.selectedListId !== null) {
+      this.loadTasksRequest(this.navigation.getUserTasksByList(userId, this.selectedListId));
+    }
+  }
+
+  private toDateTimeLocal(value: string | null): string {
+    return value ? value.substring(0, 16) : '';
   }
 
   private loadTasksRequest(request: ReturnType<TaskNavigation['getUserTasks']>): void {

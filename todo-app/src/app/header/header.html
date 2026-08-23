@@ -6,6 +6,11 @@
       <nav class="task-nav d-flex gap-2" aria-label="Фільтри завдань">
         <a
           routerLink="/home"
+          [queryParams]="{ filter: 'all' }"
+          class="btn btn-outline-primary"
+        >Всі завдання</a>
+        <a
+          routerLink="/home"
           [queryParams]="{ filter: 'important' }"
           class="btn btn-outline-primary"
         >Важливо</a>
