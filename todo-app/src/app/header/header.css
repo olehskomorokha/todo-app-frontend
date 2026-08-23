@@ -2,10 +2,25 @@
   display: block;
 }
 
-@media (max-width: 767.98px) {
-  .main-nav {
+.navbar .container-fluid {
+  position: relative;
+}
+
+.task-nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 575.98px) {
+  .task-nav {
+    position: static;
     order: 3;
     width: 100%;
-    overflow-x: auto;
+    transform: none;
+  }
+
+  .task-nav .btn {
+    flex: 1;
   }
 }

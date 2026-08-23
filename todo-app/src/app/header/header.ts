@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Auth } from '../auth/auth';
 
 @Component({
   selector: 'app-header',
@@ -7,4 +8,14 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   templateUrl: './header.html',
   styleUrl: './header.css',
 })
-export class Header {}
+export class Header {
+  constructor(
+    readonly auth: Auth,
+    private readonly router: Router,
+  ) {}
+
+  logout(): void {
+    this.auth.logout();
+    void this.router.navigateByUrl('/login');
+  }
+}

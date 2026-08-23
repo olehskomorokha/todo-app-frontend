@@ -2,23 +2,35 @@
   <div class="container-fluid d-flex flex-wrap gap-3">
     <a routerLink="/" class="navbar-brand fw-bold mb-0">Todo App</a>
 
-    <nav class="main-nav nav flex-nowrap" aria-label="Основна навігація">
-      <a routerLink="/" class="nav-link text-nowrap">Головна</a>
-      <a routerLink="/tasks" class="nav-link text-nowrap">Мої завдання</a>
-      <a routerLink="/home" class="nav-link text-nowrap">Домівка</a>
-    </nav>
-
-    <nav class="d-flex gap-2 ms-auto" aria-label="Авторизація">
-      <a
-        routerLink="/login"
-        routerLinkActive="active"
-        class="btn btn-outline-primary"
-      >Увійти</a>
-      <a
-        routerLink="/register"
-        routerLinkActive="active"
-        class="btn btn-primary"
-      >Реєстрація</a>
-    </nav>
+    @if (auth.authenticated()) {
+      <nav class="task-nav d-flex gap-2" aria-label="Фільтри завдань">
+        <a
+          routerLink="/home"
+          [queryParams]="{ filter: 'important' }"
+          class="btn btn-outline-primary"
+        >Важливо</a>
+        <a
+          routerLink="/home"
+          [queryParams]="{ filter: 'scheduled' }"
+          class="btn btn-outline-primary"
+        >Заплановано</a>
+      </nav>
+      <button type="button" class="btn btn-outline-danger ms-auto" (click)="logout()">
+        Вийти
+      </button>
+    } @else {
+      <nav class="d-flex gap-2 ms-auto" aria-label="Авторизація">
+        <a
+          routerLink="/login"
+          routerLinkActive="active"
+          class="btn btn-outline-primary"
+        >Увійти</a>
+        <a
+          routerLink="/register"
+          routerLinkActive="active"
+          class="btn btn-primary"
+        >Реєстрація</a>
+      </nav>
+    }
   </div>
 </header>

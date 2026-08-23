@@ -1,6 +1,6 @@
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID, signal } from '@angular/core';
 import { tap } from 'rxjs';
 
 export interface RegisterRequest {
@@ -26,6 +26,7 @@ export class Auth {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly apiUrl = 'https://localhost:7225/api/User';
+  readonly authenticated = signal(this.getToken() !== null);
 
   register(data: RegisterRequest) {
     return this.http.post<void>(this.apiUrl, data);
@@ -36,6 +37,7 @@ export class Auth {
       tap(token => {
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('accessToken', token);
+          this.authenticated.set(true);
         }
       }),
     );
@@ -44,6 +46,7 @@ export class Auth {
   logout(): void {
     if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('accessToken');
+      this.authenticated.set(false);
     }
   }
 
@@ -56,6 +59,6 @@ export class Auth {
   }
 
   isAuthenticated(): boolean {
-    return this.getToken() !== null;
+    return this.authenticated();
   }
 }
