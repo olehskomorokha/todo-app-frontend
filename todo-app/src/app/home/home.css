@@ -60,6 +60,22 @@
   min-width: 0;
 }
 
+.delete-confirmation {
+  position: fixed;
+  z-index: 1060;
+  top: 50%;
+  left: 50%;
+  width: min(420px, calc(100vw - 2rem));
+  transform: translate(-50%, -50%);
+}
+
+.delete-backdrop {
+  position: fixed;
+  z-index: 1050;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+}
+
 @media (max-width: 767.98px) {
   .home-layout {
     grid-template-columns: 1fr;

@@ -283,3 +283,28 @@
     }
   </section>
 </main>
+
+@if (pendingDelete; as deletion) {
+  <div class="delete-confirmation card border-danger shadow-lg" role="alertdialog"
+    aria-modal="true" aria-labelledby="delete-title">
+    <div class="card-body">
+      <h2 id="delete-title" class="h5 text-danger">Підтвердження видалення</h2>
+      <p class="mb-3">
+        Видалити {{ deletion.type === 'group' ? 'групу' : 'список' }}
+        «{{ deletion.item.name }}»?
+        @if (deletion.type === 'group' && deletion.item.taskLists.length > 0) {
+          Група містить списки: {{ groupListNames(deletion.item) }}.
+        }
+      </p>
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-light" type="button" (click)="cancelDelete()" [disabled]="saving">
+          Скасувати
+        </button>
+        <button class="btn btn-danger" type="button" (click)="confirmDelete()" [disabled]="saving">
+          {{ saving ? 'Видалення…' : 'Видалити' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="delete-backdrop" (click)="cancelDelete()"></div>
+}

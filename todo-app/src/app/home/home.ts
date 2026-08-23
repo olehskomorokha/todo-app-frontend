@@ -48,6 +48,7 @@ export class Home implements OnInit {
   editTaskListId: number | null = null;
   editTaskImportant = false;
   editTaskFinished = false;
+  pendingDelete: { type: 'group'; item: TaskGroup } | { type: 'list'; item: TaskList } | null = null;
 
   constructor(
     private readonly auth: Auth,
@@ -190,11 +191,11 @@ export class Home implements OnInit {
   }
 
   deleteGroup(group: TaskGroup): void {
-    const listCount = group.taskLists.length;
-    const warning = listCount > 0
-      ? `Група містить списки (${listCount}). Видалити групу?`
-      : `Видалити групу «${group.name}»?`;
-    if (!confirm(warning) || this.saving) return;
+    this.pendingDelete = { type: 'group', item: group };
+  }
+
+  private performGroupDelete(group: TaskGroup): void {
+    if (this.saving) return;
 
     this.saving = true;
     this.clearMessages();
@@ -202,6 +203,7 @@ export class Home implements OnInit {
       finalize(() => this.finishSaving()),
     ).subscribe({
       next: () => {
+        this.pendingDelete = null;
         this.successMessage = `Групу «${group.name}» видалено.`;
         this.refreshComponentData();
       },
@@ -228,13 +230,18 @@ export class Home implements OnInit {
   }
 
   deleteList(list: TaskList): void {
-    if (!confirm(`Видалити список «${list.name}»?`) || this.saving) return;
+    this.pendingDelete = { type: 'list', item: list };
+  }
+
+  private performListDelete(list: TaskList): void {
+    if (this.saving) return;
     this.saving = true;
     this.clearMessages();
     this.navigation.deleteList(list.id).pipe(
       finalize(() => this.finishSaving()),
     ).subscribe({
       next: () => {
+        this.pendingDelete = null;
         this.successMessage = `Список «${list.name}» видалено.`;
         if (this.selectedListId === list.id) {
           this.selectedListId = null;
@@ -245,6 +252,25 @@ export class Home implements OnInit {
       },
       error: error => this.showMutationError(error, 'Не вдалося видалити список.'),
     });
+  }
+
+  confirmDelete(): void {
+    const pending = this.pendingDelete;
+    if (!pending) return;
+
+    if (pending.type === 'group') {
+      this.performGroupDelete(pending.item);
+    } else {
+      this.performListDelete(pending.item);
+    }
+  }
+
+  cancelDelete(): void {
+    this.pendingDelete = null;
+  }
+
+  groupListNames(group: TaskGroup): string {
+    return group.taskLists.map(list => `«${list.name}»`).join(', ');
   }
 
   cancelEdit(): void {
