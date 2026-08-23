@@ -1,1 +1,40 @@
-<p>login works!</p>
+<main class="auth-page container py-5">
+  <div class="card border-0 shadow-sm mx-auto">
+    <div class="card-body p-4 p-md-5">
+      <h1 class="h3 fw-bold text-center mb-2">Вхід</h1>
+      
+      @if (errorMessage) {
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="mb-3">
+          <label for="login-email" class="form-label">Електронна пошта</label>
+          <input id="login-email" type="email" class="form-control" formControlName="email"
+            autocomplete="email" placeholder="name@example.com"
+            [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid">
+          <div class="invalid-feedback">Введіть коректну електронну адресу.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="login-password" class="form-label">Пароль</label>
+          <input id="login-password" type="password" class="form-control" formControlName="password"
+            autocomplete="current-password" placeholder="Введіть пароль"
+            [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid">
+          <div class="invalid-feedback">Введіть пароль.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" [disabled]="isSubmitting">
+          @if (isSubmitting) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          {{ isSubmitting ? 'Входимо…' : 'Увійти' }}
+        </button>
+      </form>
+
+      <p class="text-center text-body-secondary mt-4 mb-0">
+        Ще немає акаунта? <a routerLink="/register">Зареєструватися</a>
+      </p>
+    </div>
+  </div>
+</main>

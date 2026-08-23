@@ -1,1 +1,48 @@
-<p>register works!</p>
+<main class="auth-page container py-5">
+  <div class="card border-0 shadow-sm mx-auto">
+    <div class="card-body p-4 p-md-5">
+      <h1 class="h3 fw-bold text-center mb-2">Реєстрація</h1>
+
+      @if (errorMessage) {
+        <div class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="mb-3">
+          <label for="register-username" class="form-label">Ім’я користувача</label>
+          <input id="register-username" type="text" class="form-control" formControlName="username"
+            autocomplete="username" placeholder="Ваше ім’я"
+            [class.is-invalid]="form.controls.username.touched && form.controls.username.invalid">
+          <div class="invalid-feedback">Введіть щонайменше 2 символи.</div>
+        </div>
+
+        <div class="mb-3">
+          <label for="register-email" class="form-label">Електронна пошта</label>
+          <input id="register-email" type="email" class="form-control" formControlName="email"
+            autocomplete="email" placeholder="name@example.com"
+            [class.is-invalid]="form.controls.email.touched && form.controls.email.invalid">
+          <div class="invalid-feedback">Введіть коректну електронну адресу.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="register-password" class="form-label">Пароль</label>
+          <input id="register-password" type="password" class="form-control" formControlName="password"
+            autocomplete="new-password" placeholder="Щонайменше 6 символів"
+            [class.is-invalid]="form.controls.password.touched && form.controls.password.invalid">
+          <div class="invalid-feedback">Пароль має містити щонайменше 6 символів.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100" [disabled]="isSubmitting">
+          @if (isSubmitting) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          }
+          {{ isSubmitting ? 'Створюємо акаунт…' : 'Зареєструватися' }}
+        </button>
+      </form>
+
+      <p class="text-center text-body-secondary mt-4 mb-0">
+        Уже маєте акаунт? <a routerLink="/login">Увійти</a>
+      </p>
+    </div>
+  </div>
+</main>

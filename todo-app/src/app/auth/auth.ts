@@ -25,14 +25,14 @@ export interface ApiError {
 export class Auth {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly apiUrl = 'http://localhost:5127/api/User';
+  private readonly apiUrl = 'https://localhost:7225/api/User';
 
   register(data: RegisterRequest) {
     return this.http.post<void>(this.apiUrl, data);
   }
 
   login(data: LoginRequest) {
-    return this.http.post<string>(`${this.apiUrl}/login`, data).pipe(
+    return this.http.post(`${this.apiUrl}/login`, data, { responseType: 'text' }).pipe(
       tap(token => {
         if (isPlatformBrowser(this.platformId)) {
           localStorage.setItem('accessToken', token);
