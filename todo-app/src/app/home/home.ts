@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { finalize, retry } from 'rxjs';
 import { Auth } from '../auth/auth';
@@ -6,14 +7,14 @@ import { TaskGroup, TaskList, TaskNavigation, TodoTask } from '../tasks/task-nav
 
 @Component({
   selector: 'app-home',
-  imports: [FormsModule],
+  imports: [FormsModule, DatePipe],
   templateUrl: './home.html',
   styleUrl: './home.css',
 })
 export class Home implements OnInit {
   readonly groups = signal<TaskGroup[]>([]);
   readonly lists = signal<TaskList[]>([]);
-  tasks: TodoTask[] = [];
+  readonly tasks = signal<TodoTask[]>([]);
   selectedListId: number | null = null;
   selectedTitle = 'Оберіть список завдань';
   loadingTasks = false;
@@ -30,6 +31,11 @@ export class Home implements OnInit {
   editingGroupId: number | null = null;
   editingListId: number | null = null;
   editName = '';
+  newTaskName = '';
+  newTaskDescription = '';
+  newTaskDeadline = '';
+  newTaskRemind = '';
+  newTaskImportant = false;
 
   constructor(
     private readonly auth: Auth,
@@ -195,7 +201,7 @@ export class Home implements OnInit {
         if (this.selectedListId === list.id) {
           this.selectedListId = null;
           this.selectedTitle = 'Оберіть список завдань';
-          this.tasks = [];
+          this.tasks.set([]);
         }
         this.refreshComponentData();
       },
@@ -291,6 +297,45 @@ export class Home implements OnInit {
     this.loadTasksRequest(this.navigation.getUserTasksByList(userId, list.id));
   }
 
+  createTask(): void {
+    const name = this.newTaskName.trim();
+    const userId = this.auth.getUserId();
+    if (!name || userId === null || this.selectedListId === null || this.saving) return;
+    const taskListId = this.selectedListId;
+
+    if (this.newTaskRemind && this.newTaskDeadline && this.newTaskRemind >= this.newTaskDeadline) {
+      this.errorMessage = 'Нагадування має бути раніше за дедлайн.';
+      return;
+    }
+
+    this.saving = true;
+    this.clearMessages();
+    this.navigation.createTask({
+      userId,
+      taskListId,
+      name,
+      description: this.newTaskDescription.trim() || undefined,
+      deadline: this.newTaskDeadline || undefined,
+      remind: this.newTaskRemind || undefined,
+      isImportant: this.newTaskImportant,
+    }).pipe(
+      finalize(() => this.finishSaving()),
+    ).subscribe({
+      next: () => {
+        this.newTaskName = '';
+        this.newTaskDescription = '';
+        this.newTaskDeadline = '';
+        this.newTaskRemind = '';
+        this.newTaskImportant = false;
+        this.successMessage = `Завдання «${name}» створено.`;
+        if (this.selectedListId === taskListId) {
+          this.loadTasksRequest(this.navigation.getUserTasksByList(userId, taskListId));
+        }
+      },
+      error: error => this.showMutationError(error, 'Не вдалося створити завдання.'),
+    });
+  }
+
   private loadTasksRequest(request: ReturnType<TaskNavigation['getUserTasks']>): void {
     this.loadingTasks = true;
     this.errorMessage = '';
@@ -299,11 +344,10 @@ export class Home implements OnInit {
       this.changeDetector.detectChanges();
     })).subscribe({
       next: tasks => {
-        this.tasks = tasks;
-        this.changeDetector.detectChanges();
+        this.tasks.set(tasks);
       },
       error: error => {
-        this.tasks = [];
+        this.tasks.set([]);
         this.errorMessage = error.error?.message ?? 'Не вдалося завантажити завдання.';
         this.changeDetector.detectChanges();
       },

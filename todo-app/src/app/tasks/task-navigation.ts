@@ -36,6 +36,16 @@ export interface TodoTask {
   remind: string | null;
 }
 
+export interface CreateTodoTask {
+  userId: number;
+  taskListId: number | null;
+  name: string;
+  description?: string;
+  deadline?: string;
+  remind?: string;
+  isImportant: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TaskNavigation {
   private readonly http = inject(HttpClient);
@@ -95,5 +105,9 @@ export class TaskNavigation {
     return this.http.get<TodoTask[]>(
       `${this.apiUrl}/Task/user/${userId}/task-list/${taskListId}`,
     );
+  }
+
+  createTask(data: CreateTodoTask) {
+    return this.http.post<void>(`${this.apiUrl}/Task`, data);
   }
 }

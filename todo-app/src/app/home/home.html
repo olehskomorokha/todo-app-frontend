@@ -124,36 +124,95 @@
       }
     </div>
 
-    <div class="d-grid gap-3">
-      @for (task of tasks; track task.id) {
-        <article class="card shadow-sm" [class.border-primary]="task.isImportant">
-          <div class="card-body">
-            <div class="d-flex align-items-start gap-3">
-              <span class="mt-1" [class.text-decoration-line-through]="task.isFinished">
-                {{ task.isFinished ? '✓' : '○' }}
-              </span>
-              <div class="flex-grow-1">
-                <h2 class="h6 mb-1" [class.text-decoration-line-through]="task.isFinished">
-                  {{ task.name }}
-                </h2>
-                @if (task.description) {
-                  <p class="text-body-secondary mb-2">{{ task.description }}</p>
-                }
-                @if (task.deadline) {
-                  <small class="text-body-secondary">Термін: {{ task.deadline }}</small>
-                }
+    @if (selectedListId !== null) {
+      <form class="card shadow-sm mb-4" (ngSubmit)="createTask()">
+        <div class="card-body">
+          <h2 class="h5 mb-3">Нове завдання</h2>
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="task-name" class="form-label">Назва</label>
+              <input id="task-name" class="form-control" name="newTaskName"
+                [(ngModel)]="newTaskName" placeholder="Що потрібно зробити?" required>
+            </div>
+            <div class="col-12">
+              <label for="task-description" class="form-label">Опис</label>
+              <textarea id="task-description" class="form-control" name="newTaskDescription"
+                [(ngModel)]="newTaskDescription" rows="2" placeholder="Необов’язковий опис"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="task-deadline" class="form-label">Дедлайн</label>
+              <input id="task-deadline" type="datetime-local" class="form-control"
+                name="newTaskDeadline" [(ngModel)]="newTaskDeadline">
+            </div>
+            <div class="col-md-6">
+              <label for="task-remind" class="form-label">Нагадування</label>
+              <input id="task-remind" type="datetime-local" class="form-control"
+                name="newTaskRemind" [(ngModel)]="newTaskRemind">
+            </div>
+            <div class="col-12 d-flex align-items-center justify-content-between gap-3">
+              <div class="form-check">
+                <input id="task-important" type="checkbox" class="form-check-input"
+                  name="newTaskImportant" [(ngModel)]="newTaskImportant">
+                <label for="task-important" class="form-check-label">Важливе завдання</label>
               </div>
-              @if (task.isImportant) {
-                <span class="badge text-bg-warning">Важливо</span>
-              }
+              <button class="btn btn-primary" type="submit"
+                [disabled]="!newTaskName.trim() || saving">
+                {{ saving ? 'Створення…' : 'Додати завдання' }}
+              </button>
             </div>
           </div>
-        </article>
-      } @empty {
-        @if (!loadingTasks && selectedListId !== null) {
-          <div class="text-center text-body-secondary py-5">У цьому розділі ще немає завдань.</div>
-        }
-      }
-    </div>
+        </div>
+      </form>
+
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 mb-0">Завдання списку</h2>
+        <span class="badge text-bg-secondary">{{ tasks().length }}</span>
+      </div>
+    }
+
+    @if (selectedListId !== null) {
+      <div class="table-responsive border rounded shadow-sm">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Назва</th>
+              <th scope="col">Термін</th>
+              <th scope="col">Важливість</th>
+              <th scope="col">Нагадування</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (task of tasks(); track task.id) {
+              <tr [class.table-secondary]="task.isFinished">
+                <td>
+                  <div class="fw-semibold" [class.text-decoration-line-through]="task.isFinished">
+                    {{ task.name }}
+                  </div>
+                  @if (task.description) {
+                    <small class="text-body-secondary">{{ task.description }}</small>
+                  }
+                </td>
+                <td>{{ task.deadline ? (task.deadline | date:'dd-MM-yyyy') : '—' }}</td>
+                <td>
+                  <span class="badge" [class.text-bg-warning]="task.isImportant"
+                    [class.text-bg-secondary]="!task.isImportant">
+                    {{ task.isImportant ? 'Важливо' : 'Звичайна' }}
+                  </span>
+                </td>
+                <td>{{ task.remind ? (task.remind | date:'dd-MM-yyyy') : '—' }}</td>
+              </tr>
+            } @empty {
+              @if (!loadingTasks) {
+                <tr>
+                  <td colspan="4" class="text-center text-body-secondary py-4">
+                    У цьому списку ще немає завдань.
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   </section>
 </main>
