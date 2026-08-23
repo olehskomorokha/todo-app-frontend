@@ -33,7 +33,7 @@ export class Login {
     this.auth.login(this.form.getRawValue()).pipe(
       finalize(() => (this.isSubmitting = false)),
     ).subscribe({
-      next: () => void this.router.navigateByUrl('/'),
+      next: () => void this.router.navigateByUrl('/home'),
       error: error => {
         const apiError = error.error as Partial<ApiError> | string | null;
         this.errorMessage = typeof apiError === 'string'
