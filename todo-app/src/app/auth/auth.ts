@@ -61,4 +61,18 @@ export class Auth {
   isAuthenticated(): boolean {
     return this.authenticated();
   }
+
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      const claim = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier';
+      const userId = Number(payload[claim] ?? payload.sub);
+      return Number.isInteger(userId) ? userId : null;
+    } catch {
+      return null;
+    }
+  }
 }

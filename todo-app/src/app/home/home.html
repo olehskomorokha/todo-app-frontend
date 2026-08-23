@@ -1,6 +1,141 @@
-<main class="container py-5">
-  <div class="p-4 p-md-5 bg-body-tertiary rounded-3">
-    <h1 class="display-6 fw-bold">Головна сторінка</h1>
-    <p class="lead mb-0">Ви успішно увійшли до Todo App.</p>
-  </div>
+<main class="home-layout">
+  <aside class="sidebar border-end bg-body-tertiary p-3">
+    <div class="groups-list">
+      <div class="small text-uppercase text-body-secondary fw-semibold mb-2">Групи та списки</div>
+      <button type="button" class="btn btn-sm w-100 text-start mb-2"
+        [class.btn-primary]="selectedListId === null"
+        [class.btn-light]="selectedListId !== null"
+        (click)="loadAllTasks()">
+        Усі завдання
+      </button>
+      @for (group of groups; track group.id) {
+        <section class="group-item border rounded bg-body p-2 mb-2">
+          <div class="fw-semibold text-truncate px-1 mb-1">{{ group.name }}</div>
+          <div class="list-group list-group-flush">
+            @for (list of listsForGroup(group.id); track list.id) {
+              <button type="button"
+                class="list-group-item list-group-item-action bg-transparent border-0 py-1 px-3 small text-truncate"
+                [class.active]="selectedListId === list.id" (click)="selectList(list)">
+                {{ list.name }}
+              </button>
+            } @empty {
+              <div class="small text-body-secondary px-3 py-1">Порожня група</div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="mt-3">
+        <div class="small text-uppercase text-body-secondary fw-semibold mb-1">Списки Завдань</div>
+        @for (list of listsForGroup(null); track list.id) {
+          <button type="button" class="list-group-item list-group-item-action border rounded px-3 py-2 mb-2 text-truncate"
+            [class.active]="selectedListId === list.id" (click)="selectList(list)">{{ list.name }}</button>
+        } @empty {
+          <div class="small text-body-secondary">Списків без групи немає</div>
+        }
+      </section>
+    </div>
+
+    @if (successMessage) {
+      <div class="alert alert-success py-2 small mt-3 mb-0" role="status">
+        {{ successMessage }}
+      </div>
+    }
+
+    @if (errorMessage && !showListForm && !showGroupForm) {
+      <div class="alert alert-danger py-2 small mt-3" role="alert">{{ errorMessage }}</div>
+    }
+
+    @if (showListForm) {
+      <form class="card card-body shadow-sm mt-auto mb-3" (ngSubmit)="createList()">
+        <label for="list-name" class="form-label fw-semibold">Назва списку</label>
+        <input id="list-name" class="form-control mb-2" name="listName" [(ngModel)]="listName"
+          placeholder="Наприклад, Завдання на тиждень" autofocus>
+
+        <label for="list-group" class="form-label small">Група</label>
+        <select id="list-group" class="form-select mb-2" name="listGroupId" [(ngModel)]="listGroupId">
+          <option [ngValue]="null">Без групи</option>
+          @for (group of groups; track group.id) {
+            <option [ngValue]="group.id">{{ group.name }}</option>
+          }
+        </select>
+
+        @if (errorMessage) {
+          <div class="text-danger small mb-2">{{ errorMessage }}</div>
+        }
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary flex-grow-1" type="submit"
+            [disabled]="!listName.trim() || saving">
+            {{ saving ? 'Створення…' : 'Створити' }}
+          </button>
+          <button class="btn btn-light" type="button" (click)="showListForm = false">Скасувати</button>
+        </div>
+      </form>
+    }
+
+    @if (showGroupForm) {
+      <form class="card card-body shadow-sm mt-auto mb-3" (ngSubmit)="createGroup()">
+        <label for="group-name" class="form-label fw-semibold">Назва групи</label>
+        <input id="group-name" class="form-control mb-2" name="groupName" [(ngModel)]="groupName"
+          placeholder="Наприклад, Робота" autofocus>
+        @if (errorMessage) {
+          <div class="text-danger small mb-2">{{ errorMessage }}</div>
+        }
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary flex-grow-1" type="submit"
+            [disabled]="!groupName.trim() || saving">
+            {{ saving ? 'Створення…' : 'Створити' }}
+          </button>
+          <button class="btn btn-light" type="button" (click)="showGroupForm = false">Скасувати</button>
+        </div>
+      </form>
+    }
+    <div class="d-grid gap-2 mt-auto">
+      <button type="button" class="btn btn-primary" (click)="openListForm()">Створити список завдань</button>
+      <button type="button" class="btn btn-outline-primary" (click)="openGroupForm()">
+        Створити групу
+      </button>
+    </div>
+  </aside>
+
+  <section class="content p-4 p-md-5">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h1 class="h3 mb-0">{{ selectedTitle }}</h1>
+      @if (loadingTasks) {
+        <span class="spinner-border spinner-border-sm" aria-label="Завантаження завдань"></span>
+      }
+    </div>
+
+    <div class="d-grid gap-3">
+      @for (task of tasks; track task.id) {
+        <article class="card shadow-sm" [class.border-primary]="task.isImportant">
+          <div class="card-body">
+            <div class="d-flex align-items-start gap-3">
+              <span class="mt-1" [class.text-decoration-line-through]="task.isFinished">
+                {{ task.isFinished ? '✓' : '○' }}
+              </span>
+              <div class="flex-grow-1">
+                <h2 class="h6 mb-1" [class.text-decoration-line-through]="task.isFinished">
+                  {{ task.name }}
+                </h2>
+                @if (task.description) {
+                  <p class="text-body-secondary mb-2">{{ task.description }}</p>
+                }
+                @if (task.deadline) {
+                  <small class="text-body-secondary">Термін: {{ task.deadline }}</small>
+                }
+              </div>
+              @if (task.isImportant) {
+                <span class="badge text-bg-warning">Важливо</span>
+              }
+            </div>
+          </div>
+        </article>
+      } @empty {
+        @if (!loadingTasks) {
+          <div class="text-center text-body-secondary py-5">У цьому розділі ще немає завдань.</div>
+        }
+      }
+    </div>
+  </section>
 </main>
