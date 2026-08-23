@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { finalize, retry } from 'rxjs';
+import { finalize, map, retry } from 'rxjs';
 import { Auth } from '../auth/auth';
 import { TaskGroup, TaskList, TaskNavigation, TodoTask } from '../tasks/task-navigation';
 
@@ -20,6 +20,7 @@ export class Home implements OnInit {
   selectedListId: number | null = null;
   selectedTitle = 'Оберіть список завдань';
   showingAllTasks = false;
+  activeTaskFilter: 'all' | 'important' | null = null;
   loadingTasks = false;
   loadingGroups = false;
   groupErrorMessage = '';
@@ -58,7 +59,9 @@ export class Home implements OnInit {
   ngOnInit(): void {
     this.loadNavigation();
     this.route.queryParamMap.subscribe(params => {
-      if (params.get('filter') === 'all') this.loadAllTasks();
+      const filter = params.get('filter');
+      if (filter === 'all') this.loadAllTasks();
+      if (filter === 'important') this.loadImportantTasks();
     });
   }
 
@@ -330,6 +333,7 @@ export class Home implements OnInit {
     this.selectedListId = list.id;
     this.selectedTitle = list.name;
     this.showingAllTasks = false;
+    this.activeTaskFilter = null;
     this.loadTasksRequest(this.navigation.getUserTasksByList(userId, list.id));
   }
 
@@ -340,7 +344,23 @@ export class Home implements OnInit {
     this.selectedListId = null;
     this.selectedTitle = 'Всі завдання';
     this.showingAllTasks = true;
+    this.activeTaskFilter = 'all';
     this.loadTasksRequest(this.navigation.getUserTasks(userId));
+  }
+
+  loadImportantTasks(): void {
+    const userId = this.auth.getUserId();
+    if (userId === null) return;
+
+    this.selectedListId = null;
+    this.selectedTitle = 'Важливі завдання';
+    this.showingAllTasks = true;
+    this.activeTaskFilter = 'important';
+    this.loadTasksRequest(
+      this.navigation.getUserTasks(userId).pipe(
+        map(tasks => tasks.filter(task => task.isImportant === true)),
+      ),
+    );
   }
 
   createTask(): void {
@@ -456,7 +476,13 @@ export class Home implements OnInit {
   private reloadSelectedTasks(): void {
     const userId = this.auth.getUserId();
     if (userId === null) return;
-    if (this.showingAllTasks) {
+    if (this.activeTaskFilter === 'important') {
+      this.loadTasksRequest(
+        this.navigation.getUserTasks(userId).pipe(
+          map(tasks => tasks.filter(task => task.isImportant === true)),
+        ),
+      );
+    } else if (this.showingAllTasks) {
       this.loadTasksRequest(this.navigation.getUserTasks(userId));
     } else if (this.selectedListId !== null) {
       this.loadTasksRequest(this.navigation.getUserTasksByList(userId, this.selectedListId));
