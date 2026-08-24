@@ -25,7 +25,7 @@ export interface ApiError {
 export class Auth {
   private readonly http = inject(HttpClient);
   private readonly platformId = inject(PLATFORM_ID);
-  private readonly apiUrl = 'https://localhost:7225/api/User';
+  private readonly apiUrl = 'http://localhost:8080/api/User';
   readonly authenticated = signal(this.getToken() !== null);
 
   register(data: RegisterRequest) {
