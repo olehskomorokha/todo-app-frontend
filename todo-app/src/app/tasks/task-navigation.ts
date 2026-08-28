@@ -68,7 +68,7 @@ export interface PagedTasks {
 @Injectable({ providedIn: 'root' })
 export class TaskNavigation {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:8080/api';
+  private readonly apiUrl = 'https://localhost:7225/api';
 
   loadAll() {
     return forkJoin({
