@@ -435,7 +435,8 @@ export class Home implements OnInit {
   createTask(): void {
     const name = this.newTaskName.trim();
     const userId = this.auth.getUserId();
-    if (!name || userId === null || this.selectedListId === null || this.saving) return;
+    const canCreateTask = this.selectedListId !== null || this.activeTaskFilter === 'all';
+    if (!name || userId === null || !canCreateTask || this.saving) return;
     const taskListId = this.selectedListId;
 
     if (this.newTaskRemind && this.newTaskDeadline && this.newTaskRemind >= this.newTaskDeadline) {
@@ -463,7 +464,12 @@ export class Home implements OnInit {
         this.newTaskRemind = '';
         this.newTaskImportant = false;
         this.successMessage = `Завдання «${name}» створено.`;
-        if (this.selectedListId === taskListId) {
+        if (taskListId === null && this.activeTaskFilter === 'all') {
+          this.loadTasksRequest(
+            this.navigation.getUserTasks(userId, this.currentPage, this.pageSize),
+            this.currentPage,
+          );
+        } else if (taskListId !== null && this.selectedListId === taskListId) {
           this.loadTasksRequest(
             this.navigation.getUserTasksByList(userId, taskListId, this.currentPage, this.pageSize),
             this.currentPage,

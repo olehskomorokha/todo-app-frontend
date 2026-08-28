@@ -124,7 +124,7 @@
       }
     </div>
 
-    @if (selectedListId !== null) {
+    @if (selectedListId !== null || activeTaskFilter === 'all') {
       <form class="card shadow-sm mb-4" (ngSubmit)="createTask()">
         <div class="card-body">
           <h2 class="h5 mb-3">Нове завдання</h2>
